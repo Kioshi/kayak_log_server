@@ -1,0 +1,6 @@
+database:
+ username: kayak_log_server
+ password: dart
+ host: localhost
+ port: 5432
+ databaseName: kayak_log
