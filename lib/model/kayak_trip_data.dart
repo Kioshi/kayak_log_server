@@ -10,10 +10,13 @@ class _KayakTripData
   @primaryKey
   int id;
 
-  @Column(omitByDefault: true)
+  @Column(omitByDefault: false)
+  int pos;
+
+  @Column(omitByDefault: false)
   double lat;
 
-  @Column(omitByDefault: true)
+  @Column(omitByDefault: false)
   double long;
 
   @Relate(Symbol('path'), onDelete: DeleteRule.cascade, isRequired: true)
