@@ -10,8 +10,8 @@ class TripController extends ResourceController {
 
   @Operation.get()
   Future<Response> getTrips() async {
-    final query = Query<User>(context);
-    final u = await query.fetchOne();
+    final Query<User> userQuery = Query<User>(context)..where((u) => u.id).equalTo(request.authorization.ownerID);
+    final u = await userQuery.fetchOne();
     if (u == null) {
       return Response.notFound();
     }
@@ -28,40 +28,52 @@ class TripController extends ResourceController {
       return Response.notFound();
     }
 
-    if (request.authorization.ownerID != t.creatorId || !t.public) {
+    if (request.authorization.ownerID != t.user.id || !t.public) {
       return Response.unauthorized();
-    }
-
-    return Response.ok(t);
-  }
-
-  @Operation.put("id")
-  Future<Response> updateTrip(@Bind.path("id") int id, @Bind.body() KayakTrip trip) async {
-    if (request.authorization.ownerID != trip.creatorId) {
-      return Response.unauthorized();
-    }
-
-    final query = Query<KayakTrip>(context)
-      ..values = trip
-      ..where((o) => o.id).equalTo(id);
-
-    final t = await query.updateOne();
-    if (t == null) {
-      return Response.notFound();
     }
 
     return Response.ok(t);
   }
 
   @Operation.post()
-  Future<Response> createTrip(@Bind.body() KayakTrip trip) async {
-
-    trip.creatorId = request.authorization.ownerID;
+  Future<Response> updateTrip(@Bind.body() KayakTrip trip) async {
 
     final query = Query<KayakTrip>(context)..values = trip;
 
     final t = await query.insert();
     if (t == null)
+    {
+      return Response.badRequest();
+    }
+
+    return Response.ok(null);
+  }
+
+  @Operation.put()
+  Future<Response> createTrip(@Bind.body() KayakTrip trip) async {
+
+
+    final query = Query<KayakTrip>(context)..values = trip;
+
+    final t = await query.insert();
+    if (t == null)
+    {
+      return Response.badRequest();
+    }
+
+    final Query<User> userQuery = Query<User>(context)..where((u) => u.id).equalTo(request.authorization.ownerID)
+      ..join(set: (user) => user.trips);
+    final u = await userQuery.fetchOne();
+    if (u == null)
+    {
+      return Response.badRequest();
+    }
+
+    u.trips ??= ManagedSet();
+    u.trips.add(trip);
+    final Query<User> updateQuery = Query<User>(context)..values = u;
+    final result = await updateQuery.update();
+    if (result == null)
     {
       return Response.badRequest();
     }

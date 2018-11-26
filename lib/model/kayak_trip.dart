@@ -12,7 +12,7 @@ class _KayakTrip
   int id;
 
   @Column(omitByDefault: true)
-  int creatorId;
+  String guid;
 
   @Column(omitByDefault: true)
   String name;

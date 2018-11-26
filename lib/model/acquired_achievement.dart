@@ -11,6 +11,9 @@ class _AcquiredAchievement
   int id;
 
   @Column(omitByDefault: true)
+  String guid;
+
+  @Column(omitByDefault: true)
   int achievementId;
 
   @Column(omitByDefault: true)
