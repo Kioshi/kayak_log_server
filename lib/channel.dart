@@ -62,6 +62,11 @@ class KayakLogServerChannel extends ApplicationChannel implements AuthCodeContro
         .link(() => Authorizer.bearer(authServer))
         .link(() => UserController(context, authServer));
 
+    router
+        .route("/trips/[:guid]")
+        .link(() => Authorizer.bearer(authServer))
+        .link(() => UserController(context, authServer));
+
     return router;
   }
 

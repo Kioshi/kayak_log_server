@@ -26,7 +26,8 @@ class RegisterController extends ResourceController {
         user.username,
         user.password,
         request.authorization.credentials.username,
-        request.authorization.credentials.password);
+        request.authorization.credentials.password,
+        requestedScopes: [AuthScope("user")]);
 
     final response = AuthController.tokenResponse(token);
     final newBody = u.asMap()..["authorization"] = response.body;

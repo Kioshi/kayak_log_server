@@ -10,7 +10,7 @@ class _AcquiredAchievement
   @primaryKey
   int id;
 
-  @Column(omitByDefault: true)
+  @Column(omitByDefault: false)
   String guid;
 
   @Column(omitByDefault: true)

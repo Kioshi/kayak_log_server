@@ -11,16 +11,16 @@ class _KayakTrip
   @primaryKey
   int id;
 
-  @Column(omitByDefault: true)
+  @Column(omitByDefault: false)
   String guid;
 
-  @Column(omitByDefault: true)
+  @Column(omitByDefault: false)
   String name;
 
   @Column(omitByDefault: true)
   String description;
 
-  @Column(omitByDefault: true)
+  @Column(omitByDefault: false)
   DateTime timeCreated;
 
   @Column(omitByDefault: true)

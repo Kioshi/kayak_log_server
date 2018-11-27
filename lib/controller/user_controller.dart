@@ -32,7 +32,8 @@ class UserController extends ResourceController {
 
   @Operation.get("id")
   Future<Response> getUser(@Bind.path("id") int id) async {
-    if (request.authorization.ownerID != id) {
+    if (request.authorization.ownerID != id &&
+        !request.authorization.isAuthorizedForScope("admin:users")) {
       return Response.unauthorized();
     }
 
@@ -77,12 +78,14 @@ class UserController extends ResourceController {
 
     await context.transaction((transaction) async {
       await Future.forEach(user.trips, (KayakTrip trip) async {
+        trip.id = null;
         final q = Query<KayakTrip>(transaction)
           ..values = trip
           ..values.user = u;
 
         final res = await q.insert();
         await Future.forEach(trip.path, (KayakTripData path) async {
+          path.id = null;
           final q = Query<KayakTripData>(transaction)
             ..values = path
             ..values.trip = res;
@@ -91,8 +94,8 @@ class UserController extends ResourceController {
         return res;
       });
 
-      await Future.forEach(
-          user.achievements, (AcquiredAchievement achiev) async {
+      await Future.forEach(user.achievements, (AcquiredAchievement achiev) async {
+        achiev.id = null;
         final q = Query<AcquiredAchievement>(transaction)
           ..values = achiev
           ..values.user = u;
@@ -106,7 +109,8 @@ class UserController extends ResourceController {
 
   @Operation.delete("id")
   Future<Response> deleteUser(@Bind.path("id") int id) async {
-    if (request.authorization.ownerID != id) {
+    if (request.authorization.ownerID != id ||
+        !request.authorization.isAuthorizedForScope("admin:deleteUser")) {
       return Response.unauthorized();
     }
 

@@ -1,6 +1,5 @@
 import '../kayak_log_server.dart';
 import '../model/kayak_trip.dart';
-import '../model/user.dart';
 
 class TripController extends ResourceController {
   TripController(this.context, this.authServer);
@@ -10,19 +9,23 @@ class TripController extends ResourceController {
 
   @Operation.get()
   Future<Response> getTrips() async {
-    final Query<User> userQuery = Query<User>(context)..where((u) => u.id).equalTo(request.authorization.ownerID);
-    final u = await userQuery.fetchOne();
-    if (u == null) {
+    final Query<KayakTrip> q = Query<KayakTrip>(context)..where((t) => t.user.id).equalTo(request.authorization.ownerID)
+      ..returningProperties((t) => [t.guid, t.timeCreated, t.name]);
+    final trips = await q.fetch();
+    if (trips == null) {
       return Response.notFound();
     }
 
-    return Response.ok(u.trips);
+    return Response.ok(trips);
   }
 
-  @Operation.get("id")
-  Future<Response> getTrip(@Bind.path("id") int id) async {
+  @Operation.get("guid")
+  Future<Response> getTrip(@Bind.path("guid") String guid) async {
     final query = Query<KayakTrip>(context)
-      ..where((o) => o.id).equalTo(id);
+      ..where((o) => o.guid).equalTo(guid)
+      ..returningProperties((t) => [t.name, t.timeCreated, t.guid, t.duration, t.description, t.public]);
+    query..join(set: (t) => t.path);
+
     final t = await query.fetchOne();
     if (t == null) {
       return Response.notFound();
@@ -35,12 +38,17 @@ class TripController extends ResourceController {
     return Response.ok(t);
   }
 
-  @Operation.post()
-  Future<Response> updateTrip(@Bind.body() KayakTrip trip) async {
+  @Operation.post("guid")
+  Future<Response> updateTrip(@Bind.path("guid") String guid, @Bind.body() KayakTrip trip) async {
 
-    final query = Query<KayakTrip>(context)..values = trip;
+    trip.guid = guid;
+    trip.id = null;
+    final query = Query<KayakTrip>(context)
+      ..where((t)=> t.user.id).equalTo(request.authorization.ownerID)
+      ..where((t) => t.guid).equalTo(guid)
+      ..values = trip;
 
-    final t = await query.insert();
+    final t = await query.update();
     if (t == null)
     {
       return Response.badRequest();
@@ -49,45 +57,11 @@ class TripController extends ResourceController {
     return Response.ok(null);
   }
 
-  @Operation.put()
-  Future<Response> createTrip(@Bind.body() KayakTrip trip) async {
-
-
-    final query = Query<KayakTrip>(context)..values = trip;
-
-    final t = await query.insert();
-    if (t == null)
-    {
-      return Response.badRequest();
-    }
-
-    final Query<User> userQuery = Query<User>(context)..where((u) => u.id).equalTo(request.authorization.ownerID)
-      ..join(set: (user) => user.trips);
-    final u = await userQuery.fetchOne();
-    if (u == null)
-    {
-      return Response.badRequest();
-    }
-
-    u.trips ??= ManagedSet();
-    u.trips.add(trip);
-    final Query<User> updateQuery = Query<User>(context)..values = u;
-    final result = await updateQuery.update();
-    if (result == null)
-    {
-      return Response.badRequest();
-    }
-
-    return Response.ok(null);
-  }
-
-  @Operation.delete("id")
-  Future<Response> deleteTrip(@Bind.path("id") int id) async {
-    if (request.authorization.ownerID != id) {
-      return Response.unauthorized();
-    }
+  @Operation.delete("guid")
+  Future<Response> deleteTrip(@Bind.path("guid") int id) async {
 
     final query = Query<KayakTrip>(context)
+      ..where((t)=> t.user.id).equalTo(request.authorization.ownerID)
       ..where((o) => o.id).equalTo(id);
     await query.delete();
 
