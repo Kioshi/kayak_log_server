@@ -27,7 +27,7 @@ class _KayakTrip
   int duration;
 
   @Column(omitByDefault: true)
-  bool public;
+  bool publiclyAvailable;
 
   @Relate(Symbol('trips'), onDelete: DeleteRule.cascade, isRequired: true)
   User user;

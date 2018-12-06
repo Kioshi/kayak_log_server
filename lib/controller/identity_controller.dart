@@ -12,7 +12,7 @@ class IdentityController extends ResourceController {
       ..where((o) => o.id).equalTo(request.authorization.ownerID);
 
     final join = q.join(set: (u)=>u.trips);
-    join.returningProperties((t) => [t.id, t.guid, t.description, t.name, t.public, t.duration, t.timeCreated]);
+    join.returningProperties((t) => [t.id, t.guid, t.description, t.name, t.publiclyAvailable, t.duration, t.timeCreated]);
     join.join(set: (t) => t.path);//.returningProperties((p) => [p.pos, p.lat, p.long]);
     q.join(set: (u)=>u.achievements).returningProperties((a) => [a.id, a.guid, a.achievementId, a.extraInfo, a.acquiredTime]);
 

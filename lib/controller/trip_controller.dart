@@ -23,7 +23,7 @@ class TripController extends ResourceController {
   Future<Response> getTrip(@Bind.path("guid") String guid) async {
     final query = Query<KayakTrip>(context)
       ..where((o) => o.guid).equalTo(guid)
-      ..returningProperties((t) => [t.name, t.timeCreated, t.guid, t.duration, t.description, t.public]);
+      ..returningProperties((t) => [t.name, t.timeCreated, t.guid, t.duration, t.description, t.publiclyAvailable]);
     query..join(set: (t) => t.path);
 
     final t = await query.fetchOne();
@@ -31,7 +31,7 @@ class TripController extends ResourceController {
       return Response.notFound();
     }
 
-    if (request.authorization.ownerID != t.user.id || !t.public) {
+    if (request.authorization.ownerID != t.user.id || !t.publiclyAvailable) {
       return Response.unauthorized();
     }
 

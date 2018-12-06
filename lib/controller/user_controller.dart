@@ -19,7 +19,7 @@ class UserController extends ResourceController {
 
     final query = Query<User>(context);
     final join = query.join(set: (u)=>u.trips);
-    join.returningProperties((t) => [t.id, t.guid, t.description, t.name, t.public, t.duration, t.timeCreated]);
+    join.returningProperties((t) => [t.id, t.guid, t.description, t.name, t.publiclyAvailable, t.duration, t.timeCreated]);
     join.join(set: (t) => t.path);//.returningProperties((p) => [p.pos, p.lat, p.long]);
     query.join(set: (u)=>u.achievements).returningProperties((a) => [a.id, a.guid, a.achievementId, a.extraInfo, a.acquiredTime]);
     final u = await query.fetch();
@@ -41,7 +41,7 @@ class UserController extends ResourceController {
       ..where((o) => o.id).equalTo(id);
     
       final join = query.join(set: (u)=>u.trips);
-      join.returningProperties((t) => [t.id, t.guid, t.description, t.name, t.public, t.duration, t.timeCreated]);
+      join.returningProperties((t) => [t.id, t.guid, t.description, t.name, t.publiclyAvailable, t.duration, t.timeCreated]);
       join.join(set: (t) => t.path);//.returningProperties((p) => [p.pos, p.lat, p.long]);
       query.join(set: (u)=>u.achievements).returningProperties((a) => [a.id, a.guid, a.achievementId, a.extraInfo, a.acquiredTime]);
     final u = await query.fetchOne();
@@ -65,6 +65,7 @@ class UserController extends ResourceController {
       final q = Query<KayakTrip>(context)
         ..where((t)=>t.guid).oneOf(user.trips.map((t)=>t.guid));
 
+      //TODO update trips
       final rows = await q.fetch();
       user.trips.removeWhere((t) => rows.map((t)=>t.guid).contains(t.guid));
     }
