@@ -10,7 +10,7 @@ class RegisterController extends ResourceController {
   @Operation.post()
   Future<Response> createUser(@Bind.body() User user) async {
     // Check for required parameters before we spend time hashing
-    if (user.username == null || user.password == null) {
+    if (user.username == null || user.password == null || user.username == "OFFLINE") {
       return Response.badRequest(
           body: {"error": "username and password required."});
     }

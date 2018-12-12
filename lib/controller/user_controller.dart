@@ -61,14 +61,7 @@ class UserController extends ResourceController {
 
     final u = await query.fetchOne();
 
-    {
-      final q = Query<KayakTrip>(context)
-        ..where((t)=>t.guid).oneOf(user.trips.map((t)=>t.guid));
-
-      //TODO update trips
-      final rows = await q.fetch();
-      user.trips.removeWhere((t) => rows.map((t)=>t.guid).contains(t.guid));
-    }
+    if(user.achievements.isNotEmpty)
     {
       final q = Query<AcquiredAchievement>(context)
         ..where((a) => a.guid).oneOf(user.achievements.map((a) => a.guid));
@@ -77,16 +70,41 @@ class UserController extends ResourceController {
       user.achievements.removeWhere((a) => rows.map((a)=>a.guid).contains(a.guid));
     }
 
-    await context.transaction((transaction) async {
+    return await context.transaction<Response>((transaction) async {
+      if(user.trips.isNotEmpty)
+      {
+        final q = Query<KayakTrip>(transaction)
+          ..where((t)=>t.guid).oneOf(user.trips.map((t)=>t.guid));
+
+        final rows = await q.fetch();
+
+        await Future.forEach(user.trips, (KayakTrip trip) async {
+          rows.forEach((t){
+            if (t.guid == trip.guid)
+            {
+              final update = Query<KayakTrip>(transaction)
+                ..where((t) => t.guid).equalTo(trip.guid)
+                ..values.name = trip.name
+                ..values.description = trip.description
+                ..values.publiclyAvailable = trip.publiclyAvailable;
+              update.update();
+              return;
+            }
+          });
+        });
+
+        user.trips.removeWhere((t) => rows.map((t)=>t.guid).contains(t.guid));
+      }
+
       await Future.forEach(user.trips, (KayakTrip trip) async {
-        trip.id = null;
+        trip.removePropertyFromBackingMap("id");
         final q = Query<KayakTrip>(transaction)
           ..values = trip
           ..values.user = u;
 
         final res = await q.insert();
         await Future.forEach(trip.path, (KayakTripData path) async {
-          path.id = null;
+          path.removePropertyFromBackingMap("id");
           final q = Query<KayakTripData>(transaction)
             ..values = path
             ..values.trip = res;
@@ -96,16 +114,24 @@ class UserController extends ResourceController {
       });
 
       await Future.forEach(user.achievements, (AcquiredAchievement achiev) async {
-        achiev.id = null;
+        achiev.removePropertyFromBackingMap("id");
         final q = Query<AcquiredAchievement>(transaction)
           ..values = achiev
           ..values.user = u;
 
         return await q.insert();
       });
-    });
 
-    return Response.ok(null);
+      final uq = Query<User>(transaction)
+        ..where((o) => o.id).equalTo(request.authorization.ownerID);
+
+      final join = uq.join(set: (u)=>u.trips);
+      join.returningProperties((t) => [t.id, t.guid, t.description, t.name, t.publiclyAvailable, t.duration, t.timeCreated]);
+      join.join(set: (t) => t.path);//.returningProperties((p) => [p.pos, p.lat, p.long]);
+      uq.join(set: (u)=>u.achievements).returningProperties((a) => [a.id, a.guid, a.achievementId, a.extraInfo, a.acquiredTime]);
+
+      return Response.ok(await uq.fetchOne());
+    });
   }
 
   @Operation.delete("id")

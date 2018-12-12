@@ -1,3 +1,6 @@
+import 'package:kayak_log_server/controller/achievements_controller.dart';
+import 'package:kayak_log_server/controller/trip_controller.dart';
+
 import 'controller/identity_controller.dart';
 import 'controller/register_controller.dart';
 import 'controller/user_controller.dart';
@@ -65,7 +68,12 @@ class KayakLogServerChannel extends ApplicationChannel implements AuthCodeContro
     router
         .route("/trips/[:guid]")
         .link(() => Authorizer.bearer(authServer))
-        .link(() => UserController(context, authServer));
+        .link(() => TripController(context, authServer));
+
+    router
+        .route("/achievements")
+        .link(() => Authorizer.bearer(authServer))
+        .link(() => AchievementsController(context, authServer));
 
     return router;
   }
