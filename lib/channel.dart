@@ -1,4 +1,5 @@
 import 'package:kayak_log_server/controller/achievements_controller.dart';
+import 'package:kayak_log_server/controller/test_controller.dart';
 import 'package:kayak_log_server/controller/trip_controller.dart';
 
 import 'controller/identity_controller.dart';
@@ -75,6 +76,9 @@ class KayakLogServerChannel extends ApplicationChannel implements AuthCodeContro
         .link(() => Authorizer.bearer(authServer))
         .link(() => AchievementsController(context, authServer));
 
+    router
+        .route("/test")
+        .link(() => TestController(context));
     return router;
   }
 
